@@ -14,6 +14,13 @@ A typing defense game. Your ship can't move; words drift in on asteroids — typ
 
 Clean words (no typos) build a streak multiplier up to ×2.
 
+## Controls
+
+- Type a word's first letter to lock on, then finish it. **Backspace** releases the lock.
+- **Esc** pauses solo runs, or asks to leave a match. The Pause/Leave button in the corner does the same.
+- **1 / 2 / 3** on the menu start Classic, Sprint or Zen.
+- Phones: tap the screen (or "Tap to type") to bring up the keyboard.
+
 ## Run locally
 
 ```bash

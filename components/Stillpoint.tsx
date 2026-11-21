@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Engine, type HudState, type RunResult } from '@/lib/game/engine';
 import { randomSeed } from '@/lib/game/rng';
 import { SOLO_MODES, type SoloMode } from '@/lib/game/modes';
@@ -13,6 +13,8 @@ import {
 type Screen = 'menu' | 'lobby' | 'game';
 
 const NAME_KEY = 'stillpoint.name';
+// The hidden touch input always holds this, so a backspace is visible as a shorter value.
+const SENTINEL = ' ';
 const bestKey = (m: SoloMode) => `stillpoint.best.${m}`;
 
 function read(key: string): string | null {
@@ -26,8 +28,11 @@ export default function Stillpoint() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const roomRef = useRef<Room | null>(null);
+  const captureRef = useRef<HTMLInputElement>(null);
 
   const [screen, setScreen] = useState<Screen>('menu');
+  const [touch, setTouch] = useState(false);
+  const [typing, setTyping] = useState(false);
   const [soloMode, setSoloMode] = useState<SoloMode>('classic');
   const [name, setName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -47,6 +52,27 @@ export default function Stillpoint() {
 
   // ---------------------------------------------------------------- actions
 
+  /** Raise the on-screen keyboard. Only works inside a tap, so a hint covers network-started matches. */
+  function focusCapture() {
+    if (!touch) return;
+    const el = captureRef.current;
+    if (!el) return;
+    el.value = SENTINEL;
+    el.focus({ preventScroll: true });
+    el.setSelectionRange(SENTINEL.length, SENTINEL.length);
+  }
+
+  function onCaptureInput(e: FormEvent<HTMLInputElement>) {
+    const el = e.currentTarget;
+    const engine = engineRef.current;
+    if (engine) {
+      if (el.value.length < SENTINEL.length) engine.releaseLock();
+      else engine.typeText(el.value.slice(SENTINEL.length));
+    }
+    el.value = SENTINEL;
+    el.setSelectionRange(SENTINEL.length, SENTINEL.length);
+  }
+
   function startSolo(mode: SoloMode) {
     const engine = engineRef.current;
     if (!engine) return;
@@ -57,6 +83,7 @@ export default function Stillpoint() {
     setHud(null);
     setScreen('game');
     engine.startRun({ mode, seed: randomSeed() });
+    focusCapture();
   }
 
   function toMenu() {
@@ -70,8 +97,13 @@ export default function Stillpoint() {
   function togglePause() {
     const engine = engineRef.current;
     if (!engine) return;
-    if (engine.pause()) setPaused(true);
-    else if (engine.resume()) setPaused(false);
+    if (engine.pause()) {
+      setPaused(true);
+      captureRef.current?.blur();
+    } else if (engine.resume()) {
+      setPaused(false);
+      focusCapture();
+    }
   }
 
   function endZen() {
@@ -108,6 +140,7 @@ export default function Stillpoint() {
         setHud(null);
         setScreen('game');
         engine.startRun({ mode: l.mode, seed: l.seed, countdown: 3 });
+        focusCapture();
       } else if (phase === 'results') {
         engine.endRun('match');
         setConfirmLeave(false);
@@ -202,6 +235,7 @@ export default function Stillpoint() {
       },
       onEnd: (r) => {
         setResult(r);
+        captureRef.current?.blur();
         const rm = roomRef.current;
         if (rm) {
           rm.updateSelf({
@@ -217,6 +251,7 @@ export default function Stillpoint() {
     });
 
     setMuted(sfx.loadPreference());
+    setTouch(window.matchMedia('(pointer: coarse)').matches);
     setName(read(NAME_KEY) ?? '');
     setBests({
       classic: parseInt(read(bestKey('classic')) ?? '0', 10) || 0,
@@ -242,7 +277,7 @@ export default function Stillpoint() {
       const rm = roomRef.current;
       if (!engine) return;
       const el = e.target as HTMLElement | null;
-      const inField = !!el?.closest?.('input, textarea');
+      const inField = !!el?.closest?.('input:not(.type-capture), textarea');
       const onButton = !!el?.closest?.('button');
       if (onButton && (e.key === 'Enter' || e.key === ' ')) return; // let the button handle it
 
@@ -312,10 +347,29 @@ export default function Stillpoint() {
   const inMatch = screen === 'game' && room && lobby;
   const soloOver = screen === 'game' && !room && result;
   const spectating = inMatch && result && lobby.phase === 'playing';
+  const canType = screen === 'game' && !paused && !result && !(inMatch && (confirmLeave || lobby.phase !== 'playing'));
 
   return (
     <main>
-      <canvas ref={canvasRef} className="stage" />
+      <canvas ref={canvasRef} className="stage" onPointerDown={() => { if (canType) focusCapture(); }} />
+      <input
+        ref={captureRef}
+        className="type-capture"
+        aria-label="Type the words"
+        defaultValue={SENTINEL}
+        autoCapitalize="off"
+        autoCorrect="off"
+        autoComplete="off"
+        spellCheck={false}
+        enterKeyHint="done"
+        tabIndex={-1}
+        onInput={onCaptureInput}
+        onFocus={() => setTyping(true)}
+        onBlur={() => setTyping(false)}
+      />
+      {touch && canType && !typing && (
+        <button className="tap-hint" onClick={focusCapture}>Tap to type</button>
+      )}
 
       {screen === 'game' && hud && (
         <Hud hud={hud} players={inMatch ? lobby.players : null} selfId={room?.selfId ?? null} />
@@ -399,7 +453,19 @@ export default function Stillpoint() {
         </Overlay>
       )}
 
-      <SoundToggle muted={muted} onToggle={toggleMute} />
+      <div className="corner">
+        <SoundToggle muted={muted} onToggle={toggleMute} />
+        {screen === 'game' && !room && !result && (
+          <button className="corner-btn" onClick={(e) => { e.currentTarget.blur(); togglePause(); }}>
+            {paused ? 'Resume' : 'Pause'}
+          </button>
+        )}
+        {inMatch && lobby.phase === 'playing' && (
+          <button className="corner-btn" onClick={(e) => { e.currentTarget.blur(); setConfirmLeave(true); }}>
+            Leave
+          </button>
+        )}
+      </div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
   );

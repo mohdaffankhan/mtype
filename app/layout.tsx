@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#0a0c10',
+  // Shrink the layout when the on-screen keyboard opens instead of covering the ship.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

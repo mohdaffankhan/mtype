@@ -248,6 +248,7 @@ export class Engine {
     if (mono) this.fontMono = `${mono}, ${this.fontMono}`;
     this.resize();
     window.addEventListener('resize', this.resize);
+    window.visualViewport?.addEventListener('resize', this.resize);
     this.last = performance.now();
     this.raf = requestAnimationFrame(this.frame);
     this.bgTimer = setInterval(this.hiddenTick, 250);
@@ -257,6 +258,7 @@ export class Engine {
     cancelAnimationFrame(this.raf);
     clearInterval(this.bgTimer);
     window.removeEventListener('resize', this.resize);
+    window.visualViewport?.removeEventListener('resize', this.resize);
   }
 
   setHandlers(h: EngineHandlers) {
@@ -349,6 +351,16 @@ export class Engine {
     this.sfx.incoming();
   }
 
+  /** Text from an on-screen keyboard, which doesn't send usable key events. */
+  typeText(text: string) {
+    if (this.state !== 'playing') return;
+    for (const c of text.toLowerCase()) if (c >= 'a' && c <= 'z') this.typeChar(c);
+  }
+
+  releaseLock() {
+    if (this.state === 'playing') this.target = null;
+  }
+
   /** Returns true if the key was consumed by the game. */
   handleKey(e: KeyboardEvent): boolean {
     if (this.state !== 'playing') return false;
@@ -366,8 +378,11 @@ export class Engine {
 
   private resize = () => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.W = window.innerWidth;
-    this.H = window.innerHeight;
+    // The visual viewport excludes an open on-screen keyboard, so the ship stays visible above it.
+    const vv = window.visualViewport;
+    const prevW = this.W;
+    this.W = Math.round(vv?.width ?? window.innerWidth);
+    this.H = Math.round(vv?.height ?? window.innerHeight);
     this.canvas.width = Math.round(this.W * dpr);
     this.canvas.height = Math.round(this.H * dpr);
     this.canvas.style.width = this.W + 'px';
@@ -379,6 +394,8 @@ export class Engine {
     g.addColorStop(0, C.bgLift);
     g.addColorStop(1, C.bg);
     this.bg = g;
+    // Keyboard open/close only changes height; keep the starfield so it doesn't flicker.
+    if (this.W === prevW && this.stars.length) return;
     const n = Math.min(320, Math.round((this.W * this.H) / 5200));
     this.stars = Array.from({ length: n }, () => ({
       x: Math.random() * this.W, y: Math.random() * this.H, z: rand(0.15, 1), tw: Math.random() * TAU,
