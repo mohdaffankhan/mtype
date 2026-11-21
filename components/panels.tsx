@@ -124,24 +124,32 @@ export function Menu(p: MenuProps) {
       </div>
 
       <p className="section-label">Together</p>
-      <div className="together">
-        <button className="btn btn-block" onClick={p.onCreate} disabled={p.busy !== null}>
-          {p.busy === 'create' ? 'Opening room…' : 'Create room'}
-        </button>
-        <form className="join" onSubmit={submitJoin}>
-          <input
-            className="input input-code"
-            value={p.joinCode}
-            placeholder="CODE"
-            maxLength={5}
-            spellCheck={false}
-            autoComplete="off"
-            aria-label="Room code"
-            onChange={(e) => p.onJoinCode(normalizeCode(e.target.value))}
-          />
-          <button className="btn" type="submit" disabled={p.busy !== null || p.joinCode.length !== 5}>
-            {p.busy === 'join' ? 'Joining…' : 'Join'}
+      <div className="duo">
+        <div className="tile">
+          <span className="tile-title">Host a room</span>
+          <span className="tile-text">Get a code to share with up to {MAX_PLAYERS - 1} friends.</span>
+          <button className="btn btn-primary btn-block" onClick={p.onCreate} disabled={p.busy !== null}>
+            {p.busy === 'create' ? 'Opening…' : 'Create room'}
           </button>
+        </div>
+        <form className="tile" onSubmit={submitJoin}>
+          <span className="tile-title">Join a room</span>
+          <span className="tile-text">Enter the 5-letter code from your host.</span>
+          <div className="combo">
+            <input
+              className="combo-input"
+              value={p.joinCode}
+              placeholder="CODE"
+              maxLength={5}
+              spellCheck={false}
+              autoComplete="off"
+              aria-label="Room code"
+              onChange={(e) => p.onJoinCode(normalizeCode(e.target.value))}
+            />
+            <button className="combo-btn" type="submit" disabled={p.busy !== null || p.joinCode.length !== 5}>
+              {p.busy === 'join' ? '…' : 'Join'}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -171,11 +179,13 @@ export function Lobby({ lobby, selfId, isHost, copied, onCopy, onMode, onStart, 
   const enough = lobby.players.length >= 2;
   return (
     <>
-      <p className="eyebrow">Room</p>
-      <button className="room-code" onClick={onCopy} title="Copy invite link">
-        {lobby.code}
+      <p className="eyebrow">Room code</p>
+      <div className="slots" aria-label={`Room code ${lobby.code}`}>
+        {lobby.code.split('').map((c, i) => <span key={i} className="slot">{c}</span>)}
+      </div>
+      <button className={`btn btn-sm${copied ? ' is-done' : ''}`} onClick={onCopy}>
+        {copied ? 'Link copied' : 'Copy invite link'}
       </button>
-      <p className="hint">{copied ? 'Invite link copied' : 'Share the code, or click it to copy an invite link'}</p>
 
       <p className="section-label">Mode</p>
       <div className="seg" role="radiogroup">
@@ -196,7 +206,7 @@ export function Lobby({ lobby, selfId, isHost, copied, onCopy, onMode, onStart, 
       <p className="hint">{MODES[lobby.mode].description}</p>
 
       <p className="section-label">Pilots {lobby.players.length}/{MAX_PLAYERS}</p>
-      <ul className="players">
+      <ul className="players list">
         {lobby.players.map((pl) => (
           <li key={pl.id} className="player">
             <span className="dot" />
@@ -209,7 +219,7 @@ export function Lobby({ lobby, selfId, isHost, copied, onCopy, onMode, onStart, 
 
       <div className="actions">
         {isHost ? (
-          <button className="btn" onClick={onStart} disabled={!enough}>
+          <button className="btn btn-primary btn-wide" onClick={onStart} disabled={!enough}>
             Start match <kbd>Enter</kbd>
           </button>
         ) : (
@@ -321,7 +331,7 @@ export function RunOver({ result, best, isBest, onAgain, onMenu }: {
         ['Accuracy', `${result.acc}%`],
       ]} />
       <div className="actions">
-        <button className="btn" onClick={onAgain}>Play again <kbd>Enter</kbd></button>
+        <button className="btn btn-primary btn-wide" onClick={onAgain}>Play again <kbd>Enter</kbd></button>
         <button className="btn btn-ghost" onClick={onMenu}>Menu</button>
       </div>
       <p className="best">{isBest ? 'New best' : best ? `Best ${fmt(best)}` : ''}</p>
@@ -337,7 +347,7 @@ export function Paused({ zen, onResume, onRestart, onEnd, onMenu }: {
       <p className="eyebrow">Paused</p>
       <h2 className="title title-sm">Holding position</h2>
       <div className="actions actions-stack">
-        <button className="btn" onClick={onResume}>Resume <kbd>Esc</kbd></button>
+        <button className="btn btn-primary btn-wide" onClick={onResume}>Resume <kbd>Esc</kbd></button>
         {zen
           ? <button className="btn btn-ghost" onClick={onEnd}>End session</button>
           : <button className="btn btn-ghost" onClick={onRestart}>Restart</button>}
@@ -354,7 +364,7 @@ export function LeaveConfirm({ onStay, onLeave }: { onStay: () => void; onLeave:
       <h2 className="title title-sm">The match goes on</h2>
       <p className="lede">Your ship keeps flying while this is open.</p>
       <div className="actions">
-        <button className="btn" onClick={onStay}>Stay <kbd>Esc</kbd></button>
+        <button className="btn btn-primary" onClick={onStay}>Stay <kbd>Esc</kbd></button>
         <button className="btn btn-ghost" onClick={onLeave}>Leave <kbd>Enter</kbd></button>
       </div>
     </>
@@ -371,7 +381,7 @@ export function Standings({ lobby, selfId, isHost, onLobby, onLeave }: {
     <>
       <p className={`eyebrow${won ? '' : ' eyebrow-danger'}`}>{MODES[lobby.mode].name} · match over</p>
       <h2 className="title title-sm">{won ? 'Victory' : me ? `${ordinal(me.place)} place` : 'Match over'}</h2>
-      <ol className="standings">
+      <ol className="standings list">
         {ranked.map((p) => (
           <li key={p.id} className={p.id === selfId ? 'is-self' : ''}>
             <span className="place">{p.place}</span>
@@ -386,7 +396,7 @@ export function Standings({ lobby, selfId, isHost, onLobby, onLeave }: {
       </ol>
       <div className="actions">
         {isHost
-          ? <button className="btn" onClick={onLobby}>Back to lobby <kbd>Enter</kbd></button>
+          ? <button className="btn btn-primary btn-wide" onClick={onLobby}>Back to lobby <kbd>Enter</kbd></button>
           : <p className="hint hint-pulse">Waiting for the host</p>}
         <button className="btn btn-ghost" onClick={onLeave}>Leave room</button>
       </div>
