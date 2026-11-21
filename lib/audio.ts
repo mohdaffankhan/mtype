@@ -1,5 +1,5 @@
 // All sound is synthesized with Web Audio — no asset files to ship.
-const MUTE_KEY = 'stillpoint.muted';
+const MUTE_KEY = 'mtype.muted';
 const MASTER = 0.8;
 
 interface ToneOpts {

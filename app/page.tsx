@@ -1,5 +1,5 @@
-import Stillpoint from '@/components/Stillpoint';
+import MType from '@/components/MType';
 
 export default function Page() {
-  return <Stillpoint />;
+  return <MType />;
 }

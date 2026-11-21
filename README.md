@@ -1,6 +1,10 @@
-# Stillpoint
+# MType
 
 A typing defense game. Your ship can't move; words drift in on asteroids — type them before they hit.
+The M is for multiplayer: race or battle up to five friends, peer to peer, with no server.
+
+Inspired by [ZType](https://zty.pe) by Dominic Szablewski. MType is an independent project, not affiliated
+with ZType. It has its own look and adds solo modes (Sprint, Zen) and peer-to-peer multiplayer (Race, Versus).
 
 ## Modes
 

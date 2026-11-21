@@ -7,7 +7,7 @@ import type { MpMode } from '../game/modes';
  * lobby, relays attacks and decides when a match ends.
  */
 
-const PREFIX = 'stillpoint-v1-';
+const PREFIX = 'mtype-v1-';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_PLAYERS = 6;
 const TICK_MS = 300;

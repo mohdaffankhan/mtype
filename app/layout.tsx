@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'], weight: ['200', '300', '400', '500', '
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-mono' });
 
 export const metadata: Metadata = {
-  title: 'Stillpoint',
+  title: 'MType',
   description: 'A typing defense game. Hold your ground solo, or race and battle friends.',
 };
 

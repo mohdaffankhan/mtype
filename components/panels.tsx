@@ -95,7 +95,7 @@ export function Menu(p: MenuProps) {
   return (
     <>
       <p className="eyebrow">A typing defense</p>
-      <h1 className="title">Stillpoint</h1>
+      <h1 className="title">MType</h1>
       <p className="lede">Your ship can&apos;t move. Words drift in on asteroids. Type each one before it reaches you.</p>
 
       <label className="field">

@@ -12,10 +12,10 @@ import {
 
 type Screen = 'menu' | 'lobby' | 'game';
 
-const NAME_KEY = 'stillpoint.name';
+const NAME_KEY = 'mtype.name';
 // The hidden touch input always holds this, so a backspace is visible as a shorter value.
 const SENTINEL = ' ';
-const bestKey = (m: SoloMode) => `stillpoint.best.${m}`;
+const bestKey = (m: SoloMode) => `mtype.best.${m}`;
 
 function read(key: string): string | null {
   try { return localStorage.getItem(key); } catch { return null; }
@@ -24,7 +24,7 @@ function write(key: string, value: string) {
   try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
 }
 
-export default function Stillpoint() {
+export default function MType() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const roomRef = useRef<Room | null>(null);
