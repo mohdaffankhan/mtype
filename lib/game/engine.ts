@@ -137,15 +137,15 @@ function pickTier(weights: number[], r: Rng): number {
 }
 
 /**
- * Every wave is generated up front from (seed, wave) alone, so players sharing a seed
- * see identical words, positions and timing no matter how they play.
+ * Every wave is generated up front from (seed, wave) and the words of earlier waves alone,
+ * so players sharing a seed see identical words, positions and timing no matter how they play.
+ * `used` carries across the run so a word doesn't come back in a later wave.
  */
-function buildWave(seed: number, n: number): PlanItem[] {
+function buildWave(seed: number, n: number, used: Set<string>): PlanItem[] {
   const r = mulberry32(hashSeed(seed, n));
   const cfg = waveConfig(n);
   const items: PlanItem[] = [];
   const recent: string[] = [];
-  const used = new Set<string>();
   for (let i = 0; i < cfg.count; i++) {
     let word = 'void';
     for (let tries = 0; tries < 40; tries++) {
@@ -217,6 +217,10 @@ export class Engine {
   private phase: 'intermission' | 'spawning' | 'cleared' | 'stream' = 'intermission';
   private phaseT = 0;
   private plan: PlanItem[] = [];
+  /** Words already planned into waves this run, so they don't repeat. Shared-seed deterministic. */
+  private used = new Set<string>();
+  /** Randomly picked words (streams, incoming attacks). Kept apart so `used` stays identical across players. */
+  private liveUsed = new Set<string>();
   private planIdx = 0;
   private spawnT = 0;
   private cfg: WaveCfg = waveConfig(1);
@@ -297,6 +301,8 @@ export class Engine {
     this.incomingT = 0;
     this.incomingFlash = 0;
     this.ended = false;
+    this.used = new Set();
+    this.liveUsed = new Set();
     this.ship.dead = false;
     this.ship.angle = -Math.PI / 2;
 
@@ -421,7 +427,7 @@ export class Engine {
   private nextWave() {
     this.wave++;
     this.cfg = waveConfig(this.wave);
-    this.plan = buildWave(this.seed, this.wave);
+    this.plan = buildWave(this.seed, this.wave, this.used);
     this.planIdx = 0;
     this.spawnT = 0;
     this.phase = 'intermission';
@@ -505,9 +511,10 @@ export class Engine {
       const list = WORDS[TIERS[pickTier(weights, Math.random)]];
       word = list[Math.floor(Math.random() * list.length)];
       if (onScreen.has(word)) continue;
-      if (tries < 30 && leads.has(word[0])) continue;
+      if (tries < 30 && (this.used.has(word) || this.liveUsed.has(word) || leads.has(word[0]))) continue;
       break;
     }
+    this.liveUsed.add(word);
     return word;
   }
 
