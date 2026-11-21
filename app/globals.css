@@ -604,7 +604,20 @@ kbd {
   .title { font-size: 38px; }
   .title-sm { font-size: 26px; }
   .room-code { font-size: 38px; }
-  .cards { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr; gap: 8px; }
+  .card {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    column-gap: 12px;
+    padding: 15px 16px;
+    text-align: left;
+  }
+  .card:hover { transform: none; }
+  .card-key { position: static; }
+  .card-tag { color: var(--muted); }
+  .card-best { grid-column: 4; }
+  .section-label { margin: 26px 0 12px; }
   .stats { grid-template-columns: repeat(2, 1fr) !important; }
   .stats div:nth-child(3) { border-left: 0; }
   .stats div:nth-child(n + 3) { border-top: 1px solid var(--line); }
